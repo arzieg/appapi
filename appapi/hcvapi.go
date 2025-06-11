@@ -112,6 +112,9 @@ func VaultCreatePolicy(client *api.Client, group string, verbose bool) (policyNa
 path "kv-clab-dagobah/data/suma" {
 	capabilities = ["list", "read"]
 }
+path "kv-clab-dagobah/data/meshstack" {
+	capabilities = ["list", "read"]
+}	
 path "sys/policies/acl/%s_read_policy" {
 	capabilities = ["read"]
 }
