@@ -262,16 +262,19 @@ func SumaLogin(username, password, susemgr string, verbose bool) (sessioncookie 
 	// Send the request using the HTTP client
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("error sending request: %v\n", err)
-		return "", err
-	}
 
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("error closing response body: %v\n", err)
 		}
 	}()
+
+	if resp.StatusCode != http.StatusOK {
+		if verbose {
+			log.Printf("DEBUG SUMAAPI SumaLogin: HTTP Request failed: HTTP %d\n", resp.StatusCode)
+		}
+		return "", fmt.Errorf("HTTP Request failed: HTTP/%d", resp.StatusCode)
+	}
 
 	// Extract the session cookie from the response headers
 	cookies := resp.Cookies()
@@ -610,7 +613,11 @@ var sumaRemoveSystemGroup = func(sessioncookie, susemgrurl, group string, verbos
 
 }
 
-func sumaCheckSystemGroup(sessioncookie, group, susemgrurl string, verbose bool) (exists bool) {
+// refactor:
+// sumaCheckSystemGroup should return bool, error to eliminate os.Exit
+// after them write a test
+
+var sumaCheckSystemGroup = func(sessioncookie, group, susemgrurl string, verbose bool) (exists bool) {
 
 	type responseListAllGroups struct {
 		Result []struct {
@@ -790,7 +797,7 @@ var sumaCheckUser = func(sessioncookie, group, susemgrurl string, verbose bool) 
 }
 
 // SumaAddUser add a user to the suse manager.
-func SumaAddUser(sessioncookie, group, grouppassword, susemgrurl string, verbose bool) (statuscode int, err error) {
+var SumaAddUser = func(sessioncookie, group, grouppassword, susemgrurl string, verbose bool) (statuscode int, err error) {
 
 	type AddUser struct {
 		Login     string `json:"login"`
@@ -873,6 +880,14 @@ func SumaAddUser(sessioncookie, group, grouppassword, susemgrurl string, verbose
 			log.Printf("error closing response body: %v\n", err)
 		}
 	}()
+
+	if resp.StatusCode != http.StatusOK {
+		if verbose {
+			log.Printf("DEBUG SUMAAPI SumaAddUser: http request failed: HTTP %d\n", resp.StatusCode)
+		}
+		return resp.StatusCode, fmt.Errorf("HTTP Request failed: HTTP/%d", resp.StatusCode)
+
+	}
 
 	if verbose {
 		log.Printf("DEBUG SUMAAPI SumaAddUser: Add User: %v\n", resp)
