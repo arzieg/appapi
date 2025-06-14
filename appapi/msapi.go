@@ -9,26 +9,16 @@ import (
 	"net/http"
 )
 
-// functions
-/*
-MsLogin - erl
-MsLogout - nicht notwendig
-MsListBuildingBlocks - erl
-MsCreateBuildingBlock - erl
-MsGetBuildingBlockStatus
-MsDeleteBuildingBlock
-
-*/
-
+// BuildingBlockType hold the structure for a BuildingBlock
 type BuildingBlockType struct {
 	Name string
-	Uuid string
+	UUID string
 }
 
-// MsLogin try to login into Meshstack with a api key and get a bearer token back
+// MsLogin login to Meshstack with a api key and get a bearer token back
 func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken string, err error) {
 
-	var grant_type string = "client_credentials"
+	var grantType string = "client_credentials"
 
 	if verbose {
 		log.Println("DEBUG MSAPI MsLogin: ====================")
@@ -44,8 +34,8 @@ func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken s
 	}
 
 	// Create the authentication request payload
-	payloadString := fmt.Sprintf("client_id=%s&client_secret=%s&grant_type=%s", clientid, clientsecret, grant_type)
-	payloadStringWithoutPassword := fmt.Sprintf("client_id=%s&client_secret=XXXXXXX&grant_type=%s", clientid, grant_type)
+	payloadString := fmt.Sprintf("client_id=%s&client_secret=%s&grantType=%s", clientid, clientsecret, grantType)
+	payloadStringWithoutPassword := fmt.Sprintf("client_id=%s&client_secret=XXXXXXX&grantType=%s", clientid, grantType)
 	if verbose {
 		log.Printf("DEBUG MSAPI MSLogin: payloadString = %s", payloadStringWithoutPassword)
 	}
@@ -105,6 +95,7 @@ func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken s
 	return myaccesstoken.AccessToken, nil
 }
 
+// MsListBuildingBlocks list all deployed building blocks in a project
 func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []BuildingBlockType, err error) {
 
 	var functionname string = "MsListBuildingBlocks"
@@ -165,7 +156,7 @@ func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []
 		        "kind": "meshBuildingBlock",
 		        "apiVersion": "v1",
 		        "metadata": {
-		          "uuid": "xyz"
+		          "UUID": "xyz"
 		        },
 		        "spec": {
 		          "displayName": "abc"
@@ -204,14 +195,15 @@ func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []
 		if verbose {
 			log.Printf("UUID: %s, DisplayName: %s\n", item.Metadata.UUID, item.Spec.DisplayName)
 		}
-		newb := BuildingBlockType{Name: item.Spec.DisplayName, Uuid: item.Metadata.UUID}
+		newb := BuildingBlockType{Name: item.Spec.DisplayName, UUID: item.Metadata.UUID}
 		bb = append(bb, newb)
 	}
 
 	return bb, nil
 }
 
-func MsCreateBuildingBlock(apiurl, apikey string, payload []byte, verbose bool) (uuid string, err error) {
+// MsCreateBuildingBlock create a new Building Block based on a template
+func MsCreateBuildingBlock(apiurl, apikey string, payload []byte, verbose bool) (UUID string, err error) {
 
 	var functionname string = "MsCreateBuildingBlock"
 
@@ -267,7 +259,7 @@ func MsCreateBuildingBlock(apiurl, apikey string, payload []byte, verbose bool) 
 		log.Printf("DEBUG MSAPI %s: Got resp.Body = %s\n", functionname, string(bodyBytes))
 	}
 
-	// get uuid
+	// get UUID
 
 	type Metadata struct {
 		UUID string `json:"uuid"`
@@ -276,23 +268,24 @@ func MsCreateBuildingBlock(apiurl, apikey string, payload []byte, verbose bool) 
 		Metadata Metadata `json:"metadata"`
 	}
 
-	var myuuid Response
-	err = json.Unmarshal([]byte(bodyBytes), &myuuid)
+	var myUUID Response
+	err = json.Unmarshal([]byte(bodyBytes), &myUUID)
 	if err != nil {
 		log.Printf("error unmarshal http response: %v", err)
 		return "", err
 	}
 
-	uuid = myuuid.Metadata.UUID
+	UUID = myUUID.Metadata.UUID
 
 	if verbose {
-		log.Printf("UUID: %s\n", myuuid.Metadata.UUID)
+		log.Printf("UUID: %s\n", myUUID.Metadata.UUID)
 	}
 
-	return uuid, nil
+	return UUID, nil
 }
 
-func MsDeleteBuildingBlock(apiurl, apikey, uuid string, verbose bool) (err error) {
+// MsDeleteBuildingBlock deletes a Building Block
+func MsDeleteBuildingBlock(apiurl, apikey, UUID string, verbose bool) (err error) {
 
 	var functionname string = "MsDeleteBuildingBlock"
 
@@ -303,7 +296,7 @@ func MsDeleteBuildingBlock(apiurl, apikey, uuid string, verbose bool) (err error
 		defer log.Printf("DEBUG MSAPI %s: Leave function %s\n", functionname, functionname)
 	}
 	//  Define the API Method
-	apiMethod := fmt.Sprintf("%s/api/meshobjects/meshbuildingblocks/%s", apiurl, uuid)
+	apiMethod := fmt.Sprintf("%s/api/meshobjects/meshbuildingblocks/%s", apiurl, UUID)
 	if verbose {
 		log.Printf("DEBUG MSAPI %s: apiMethod = %s", functionname, apiMethod)
 	}
@@ -325,6 +318,10 @@ func MsDeleteBuildingBlock(apiurl, apikey, uuid string, verbose bool) (err error
 		return err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("error http/%d", resp.StatusCode)
+	}
+
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			log.Printf("error closing response body: %v\n", err)
@@ -334,7 +331,8 @@ func MsDeleteBuildingBlock(apiurl, apikey, uuid string, verbose bool) (err error
 	return nil
 }
 
-func MsGetBuildingBlock(apiurl, apikey, uuid string, verbose bool) (status string, err error) {
+// MsGetBuildingBlock get the actual deployment status of a Building Block
+func MsGetBuildingBlock(apiurl, apikey, UUID string, verbose bool) (status string, err error) {
 
 	var functionname string = "MsGetBuildingBlock"
 
@@ -345,7 +343,7 @@ func MsGetBuildingBlock(apiurl, apikey, uuid string, verbose bool) (status strin
 		defer log.Printf("DEBUG MSAPI %s: Leave function %s\n", functionname, functionname)
 	}
 	//  Define the API Method
-	apiMethod := fmt.Sprintf("%s/api/meshobjects/meshbuildingblocks/%s", apiurl, uuid)
+	apiMethod := fmt.Sprintf("%s/api/meshobjects/meshbuildingblocks/%s", apiurl, UUID)
 	if verbose {
 		log.Printf("DEBUG MSAPI %s: apiMethod = %s", functionname, apiMethod)
 	}
@@ -396,9 +394,12 @@ func MsGetBuildingBlock(apiurl, apikey, uuid string, verbose bool) (status strin
 			ABORTED
 	*/
 
-	type Status struct {
+	/*type Status struct {
 		Status string `json:"status"`
-	}
+	}*/
+
+	type Status string
+
 	type Response struct {
 		Status Status `json:"status"`
 	}
@@ -410,10 +411,10 @@ func MsGetBuildingBlock(apiurl, apikey, uuid string, verbose bool) (status strin
 		return "", err
 	}
 
-	status = mystatus.Status.Status
+	status = string(mystatus.Status)
 
 	if verbose {
-		log.Printf("STATUS: %s\n", mystatus.Status.Status)
+		log.Printf("STATUS: %s\n", mystatus.Status)
 	}
 
 	return status, nil
