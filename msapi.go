@@ -9,11 +9,13 @@ import (
 	"net/http"
 )
 
+/*
 // BuildingBlockType hold the structure for a BuildingBlock
 type BuildingBlockType struct {
 	Name string
 	UUID string
 }
+*/
 
 // MsLogin login to Meshstack with a api key and get a bearer token back
 func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken string, err error) {
@@ -74,13 +76,15 @@ func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken s
 		log.Printf("DEBUG MSAPI msLogin: Got resp.Body = %s\n", string(bodyBytes))
 	}
 
-	// extract the authentication token
-	type ResultMsLogin struct {
-		AccessToken string `json:"access_token"`
-	}
+	/*
+		// extract the authentication token
+		type ResultMsLogin struct {
+			AccessToken string `json:"access_token"`
+		}
+	*/
 
 	// Unmarshal the JSON response into the struct
-	var myaccesstoken ResultMsLogin
+	var myaccesstoken MSApiResultMsLogin
 	err = json.Unmarshal(bodyBytes, &myaccesstoken)
 	if err != nil {
 		log.Printf("error unmarshaling JSON: %s\n", err)
@@ -96,7 +100,7 @@ func MsLogin(clientid, clientsecret, apiurl string, verbose bool) (accesstoken s
 }
 
 // MsListBuildingBlocks list all deployed building blocks in a project
-func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []BuildingBlockType, err error) {
+func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []MSApiBuildingBlockType, err error) {
 
 	var functionname string = "MsListBuildingBlocks"
 
@@ -167,24 +171,26 @@ func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []
 		}`
 	*/
 
-	type Metadata struct {
-		UUID string `json:"uuid"`
-	}
-	type Spec struct {
-		DisplayName string `json:"displayName"`
-	}
-	type MeshBuildingBlockType struct {
-		Metadata Metadata `json:"metadata"`
-		Spec     Spec     `json:"spec"`
-	}
-	type Embedded struct {
-		MeshBuildingBlockType []MeshBuildingBlockType `json:"meshBuildingBlocks"`
-	}
-	type Response struct {
-		Embedded Embedded `json:"_embedded"`
-	}
+	/*
+		type Metadata struct {
+			UUID string `json:"uuid"`
+		}
+		type Spec struct {
+			DisplayName string `json:"displayName"`
+		}
+		type MeshBuildingBlockType struct {
+			Metadata Metadata `json:"metadata"`
+			Spec     Spec     `json:"spec"`
+		}
+		type Embedded struct {
+			MeshBuildingBlockType []MeshBuildingBlockType `json:"meshBuildingBlocks"`
+		}
+		type Response struct {
+			Embedded Embedded `json:"_embedded"`
+		}
+	*/
 
-	var myvalues Response
+	var myvalues MSApiResponse
 	err = json.Unmarshal([]byte(bodyBytes), &myvalues)
 	if err != nil {
 		log.Printf("error unmarshal http response: %v", err)
@@ -195,7 +201,7 @@ func MsListBuildingBlocks(apiurl, projectid, apikey string, verbose bool) (bb []
 		if verbose {
 			log.Printf("UUID: %s, DisplayName: %s\n", item.Metadata.UUID, item.Spec.DisplayName)
 		}
-		newb := BuildingBlockType{Name: item.Spec.DisplayName, UUID: item.Metadata.UUID}
+		newb := MSApiBuildingBlockType{Name: item.Spec.DisplayName, UUID: item.Metadata.UUID}
 		bb = append(bb, newb)
 	}
 
@@ -261,14 +267,16 @@ func MsCreateBuildingBlock(apiurl, apikey string, payload []byte, verbose bool) 
 
 	// get UUID
 
-	type Metadata struct {
-		UUID string `json:"uuid"`
-	}
-	type Response struct {
-		Metadata Metadata `json:"metadata"`
-	}
+	/*
+		type Metadata struct {
+			UUID string `json:"uuid"`
+		}
+		type Response struct {
+			Metadata Metadata `json:"metadata"`
+		}
+	*/
 
-	var myUUID Response
+	var myUUID MSApiResponseUUID
 	err = json.Unmarshal([]byte(bodyBytes), &myUUID)
 	if err != nil {
 		log.Printf("error unmarshal http response: %v", err)
@@ -398,13 +406,15 @@ func MsGetBuildingBlock(apiurl, apikey, UUID string, verbose bool) (status strin
 		Status string `json:"status"`
 	}*/
 
-	type Status string
+	/*
+		type Status string
 
-	type Response struct {
-		Status Status `json:"status"`
-	}
+		type Response struct {
+			Status Status `json:"status"`
+		}
+	*/
 
-	var mystatus Response
+	var mystatus MSApiResponseStatus
 	err = json.Unmarshal([]byte(bodyBytes), &mystatus)
 	if err != nil {
 		log.Printf("error unmarshal http response: %v", err)
