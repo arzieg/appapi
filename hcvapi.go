@@ -102,25 +102,27 @@ func VaultLogout(client *api.Client, verbose bool) error {
 }
 
 // VaultCreatePolicy create the vault policy for the role.
-func VaultCreatePolicy(client *api.Client, group string, verbose bool) (policyName string, err error) {
+func VaultCreatePolicy(client *api.Client, group, policyContent string, verbose bool) (policyName string, err error) {
 
 	policyName = fmt.Sprintf("%s_read_policy", group)
-	policyContent := fmt.Sprintf(
-		`path "kv-clab-%s*" {
-		capabilities = ["list", "read"]
-	}
-path "kv-clab-dagobah/data/suma" {
-	capabilities = ["list", "read"]
-}
-path "kv-clab-dagobah/data/meshstack" {
-	capabilities = ["list", "read"]
-}	
-path "sys/policies/acl/%s_read_policy" {
-	capabilities = ["read"]
-}
-path "auth/token/lookup-self" {
-  capabilities = ["read"]
-}`, group, group)
+	/*
+			policyContent := fmt.Sprintf(
+				`path "kv-clab-%s*" {
+				capabilities = ["list", "read"]
+			}
+		path "kv-clab-dagobah/data/suma" {
+			capabilities = ["list", "read"]
+		}
+		path "kv-clab-dagobah/data/meshstack" {
+			capabilities = ["list", "read"]
+		}
+		path "sys/policies/acl/%s_read_policy" {
+			capabilities = ["read"]
+		}
+		path "auth/token/lookup-self" {
+		  capabilities = ["read"]
+		}`, group, group)
+	*/
 
 	if verbose {
 		log.Printf("DEBUG HCVAPI VaultCreatePolicy: policyName: %s\n", policyName)
